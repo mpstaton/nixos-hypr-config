@@ -5,8 +5,8 @@
     "margin": "0 0 0 0",
     "spacing": 0,
 
-    "modules-left": ["custom/launcher", "custom/cheatsheet", "hyprland/workspaces", "hyprland/window"],
-    "modules-center": ["custom/network_traffic"],
+    "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["custom/network_traffic", "custom/cheatsheet"],
     "modules-right": ["clock#time", "backlight", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
     "custom/launcher": {
