@@ -39,10 +39,20 @@
   users.users.mps = {
     isNormalUser = true;
     description = "mps";
-    extraGroups = [ "networkmanager" "wheel" "video" "input" "audio" ];
+    extraGroups = [ "networkmanager" "wheel" "video" "input" "audio" "docker" ];
     shell = pkgs.bash; # default login shell; fish is still installed below
   };
   programs.fish.enable = true; # available via `fish`, just not the default
+
+  ####################################################################
+  # Docker — enabled as a SERVICE, not just a package. This one line sets up
+  # the daemon, the `docker` CLI, containerd (bundled — no separate install),
+  # the socket + systemd units, and the `docker compose` plugin. The `docker`
+  # group added to the user above lets you run docker without sudo.
+  # (docker-desktop is NOT in nixpkgs and is redundant on Linux — the engine is
+  # native here, no VM. Use `lazydocker`/`portainer` if you want a GUI later.)
+  ####################################################################
+  virtualisation.docker.enable = true;
 
   ####################################################################
   # Hyprland — the whole point of this machine
