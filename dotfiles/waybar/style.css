@@ -194,3 +194,10 @@ window#waybar {
    padding: 0 4px;
    border-style: hidden;
 }
+#custom-nixupdates{
+   padding: 0 6px;
+   color: #a3be8c;          /* green = up to date */
+}
+#custom-nixupdates.has-updates{
+   color: #ebcb8b;          /* yellow = updates available */
+}

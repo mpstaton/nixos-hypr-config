@@ -7,7 +7,7 @@
 
     "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["custom/network_traffic", "custom/cheatsheet"],
-    "modules-right": ["clock#time", "backlight", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
+    "modules-right": ["clock#time", "backlight", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "custom/nixupdates", "tray", "idle_inhibitor", "custom/power"],
 
     "custom/launcher": {
         "format": "    ",
@@ -19,6 +19,13 @@
         "format": "󰌌",
         "on-click": "~/.config/hypr/scripts/keybind_cheatsheet.sh",
         "tooltip-format": "Keybindings cheat-sheet  (Super+/)"
+    },
+
+    "custom/nixupdates": {
+        "exec": "~/.config/hypr/scripts/nix_updates.sh",
+        "return-type": "json",
+        "interval": 3600,
+        "on-click": "~/.config/hypr/scripts/nix_updates.sh --open"
     },
 
     "hyprland/workspaces": {
