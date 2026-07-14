@@ -12,7 +12,10 @@
   # available without stealing the default.
   ####################################################################
   xdg.mimeApps = {
-    enable = true;
+    # Disabled: HM won't clobber your existing ~/.config/mimeapps.list. Set
+    # default apps via Plasma / `xdg-mime` instead. (Also these pointed at
+    # vivaldi, which isn't installed.)
+    enable = false;
     defaultApplications = {
       "text/html" = "vivaldi-stable.desktop";
       "x-scheme-handler/http" = "vivaldi-stable.desktop";
@@ -560,12 +563,15 @@
   # Cursor / GTK — minimal starting point; port Kvantum "Sweet" / qt5ct
   # from the old config later if you care about matching it pixel-for-pixel.
   ####################################################################
-  home.pointerCursor = {
-    gtk.enable = true;
-    package = pkgs.bibata-cursors;
-    name = "Bibata-Modern-Classic";
-    size = 24;
-  };
+  # Disabled: keep your live breeze_cursors (from Plasma) instead of Bibata.
+  # This block wrote cursor lines into ~/.gtkrc-2.0 / gtk-3.0 settings, which
+  # HM refused to clobber. Re-enable if you ever want HM to own the cursor.
+  # home.pointerCursor = {
+  #   gtk.enable = true;
+  #   package = pkgs.bibata-cursors;
+  #   name = "Bibata-Modern-Classic";
+  #   size = 24;
+  # };
 
   ####################################################################
   # Dark mode — applied to both desktops.
@@ -581,7 +587,12 @@
   # that's the qt5ct/Kvantum "Sweet" port the cursor/GTK comment defers.)
   ####################################################################
   gtk = {
-    enable = true;
+    # Disabled: keep your live breeze-dark GTK theme (Plasma). HM refused to
+    # overwrite the existing gtk-3.0/gtk-4.0 settings + ~/.gtkrc-2.0. Your GTK
+    # apps are already dark via those live files; the dconf prefer-dark hint
+    # below still drives Electron/browser dark mode. Flip back to true (and
+    # remove the live files) if you want HM to own the theme.
+    enable = false;
     theme = {
       name = "Adwaita-dark";
       package = pkgs.gnome-themes-extra;
