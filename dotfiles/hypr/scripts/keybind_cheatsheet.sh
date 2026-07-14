@@ -118,4 +118,4 @@ if [ "${1:-}" = "--dry-run" ]; then
     exit 0
 fi
 
-build | sort -k2 | wofi --dmenu --insensitive --lines 25 --width 1000 --prompt "Keybindings" >/dev/null || true
+build | sort -k2 | wofi --dmenu --insensitive --lines 26 --width 1200 --prompt "Keybindings" >/dev/null || true
