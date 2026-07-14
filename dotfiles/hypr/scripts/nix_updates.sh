@@ -11,14 +11,12 @@ REPO="https://github.com/NixOS/nixpkgs.git"
 
 if [ "${1:-}" = "--open" ]; then
     # System/update terminal = foot with a distinct maroon tint, so it's
-    # visually unmistakable vs the Ghostty dev terminal. footclient is instant
+    # visually unmistakable vs the Ghostty dev terminal. Runs the preview ritual
+    # (bump -> build -> nvd diff -> apply or revert). footclient is instant
     # (foot --server autostarts); fall back to a standalone foot if needed.
-    cmd="cd '$FLAKE'; echo; echo 'Preview what would change, then update:'; \
-         echo '  nix flake update'; \
-         echo '  nixos-rebuild build --flake .#hypr-nix && nix store diff-closures /run/current-system ./result'; \
-         echo '  sudo nixos-rebuild switch --flake .#hypr-nix'; echo; exec bash"
-    footclient --title "NixOS-update" -o colors.background=2b1a1f -o colors.foreground=e8e0e2 bash -lc "$cmd" 2>/dev/null \
-      || foot --title "NixOS-update" -o colors.background=2b1a1f -o colors.foreground=e8e0e2 bash -lc "$cmd"
+    preview="$HOME/.config/hypr/scripts/nix_update_preview.sh"
+    footclient --title "NixOS-update" -o colors.background=2b1a1f -o colors.foreground=e8e0e2 "$preview" 2>/dev/null \
+      || foot --title "NixOS-update" -o colors.background=2b1a1f -o colors.foreground=e8e0e2 "$preview"
     exit 0
 fi
 
