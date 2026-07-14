@@ -260,7 +260,9 @@
     superfile       # `spf` — modern terminal file manager
     nushell         # `nu` — structured-data shell (available to run; not the login shell)
     brave           # Brave browser
-    kdenlive        # KDE video editor
+    kdePackages.kdenlive   # KDE video editor
+    switcheroo      # image converter / resizer GUI
+    resources       # modern system monitor GUI
     inputs.hunk.packages.${pkgs.system}.default   # `hunk` — terminal diff viewer
 
     # Wayland / desktop tools (were `nix profile install`-ed; now declarative)
