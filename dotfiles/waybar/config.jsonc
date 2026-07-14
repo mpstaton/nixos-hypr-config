@@ -5,7 +5,7 @@
     "margin": "0 0 0 0",
     "spacing": 0,
 
-    "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+    "modules-left": ["custom/launcher", "custom/cheatsheet", "hyprland/workspaces", "hyprland/window"],
     "modules-center": ["custom/network_traffic"],
     "modules-right": ["clock#time", "backlight", "temperature", "cpu", "memory", "battery", "pulseaudio", "network", "tray", "idle_inhibitor", "custom/power"],
 
@@ -13,6 +13,12 @@
         "format": "    ",
         "on-click": "nwg-drawer -c 7 -is 70 -spacing 23",
         "tooltip": false
+    },
+
+    "custom/cheatsheet": {
+        "format": "󰌌",
+        "on-click": "~/.config/hypr/scripts/keybind_cheatsheet.sh",
+        "tooltip-format": "Keybindings cheat-sheet  (Super+/)"
     },
 
     "hyprland/workspaces": {
