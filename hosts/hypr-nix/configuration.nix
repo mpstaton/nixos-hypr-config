@@ -263,6 +263,8 @@
     kdePackages.kdenlive   # KDE video editor
     switcheroo      # image converter / resizer GUI
     resources       # modern system monitor GUI
+    onlyoffice-desktopeditors   # office suite (docs/sheets/slides)
+    curtail         # image compressor GUI
     inputs.hunk.packages.${pkgs.system}.default   # `hunk` — terminal diff viewer
 
     # Wayland / desktop tools (were `nix profile install`-ed; now declarative)
