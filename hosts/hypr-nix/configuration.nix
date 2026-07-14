@@ -250,6 +250,16 @@
     lazydocker      # terminal UI for docker
     podman-desktop  # desktop GUI (manages the docker socket too)
 
+    # Dev tools (were `nix profile install`-ed; now declarative)
+    jujutsu         # `jj` — git-compatible VCS
+    helix           # `hx` — modal terminal editor
+    nvd             # nix closure diff (used by the update-preview ritual)
+    inputs.hunk.packages.${pkgs.system}.default   # `hunk` — terminal diff viewer
+
+    # Wayland / desktop tools (were `nix profile install`-ed; now declarative)
+    hyprshot        # screenshots (Print binds)
+    satty           # screenshot annotator
+
     # Wayland session utilities used directly by hyprland.conf binds
     hyprpolkitagent # polkit agent (see security.polkit above)
     brightnessctl

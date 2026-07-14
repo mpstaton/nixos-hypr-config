@@ -30,6 +30,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
+
+    # Hunk — terminal diff viewer. Not in nixpkgs; ships its own flake. NOT
+    # following our nixpkgs (its bun2nix build wants its own pin), which just
+    # means a second nixpkgs entry in flake.lock — harmless.
+    hunk.url = "github:modem-dev/hunk";
   };
 
   outputs = { self, nixpkgs, home-manager, disko, ... }@inputs:
