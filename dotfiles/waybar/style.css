@@ -187,3 +187,10 @@ window#waybar {
 #custom-network_traffic{
    color:#d08770;
 }
+#custom-cheatsheet{
+   font-size: 22px;
+   color: #00e5ff;
+   margin-left: 18px;
+   padding: 0 4px;
+   border-style: hidden;
+}
