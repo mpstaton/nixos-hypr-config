@@ -54,6 +54,23 @@
   ####################################################################
   virtualisation.docker.enable = true;
 
+  # Portainer isn't a package — it's a container. Run it declaratively as a
+  # systemd-managed OCI container (starts on boot). Web UI at https://localhost:9443
+  # (first visit: create an admin user). It mounts the docker socket to manage
+  # the local engine, and a named volume for its own data.
+  virtualisation.oci-containers = {
+    backend = "docker";
+    containers.portainer = {
+      image = "portainer/portainer-ce:latest";
+      autoStart = true;
+      ports = [ "9443:9443" ];
+      volumes = [
+        "/var/run/docker.sock:/var/run/docker.sock"
+        "portainer_data:/data"
+      ];
+    };
+  };
+
   ####################################################################
   # Hyprland — the whole point of this machine
   ####################################################################
@@ -228,6 +245,10 @@
     killall
     unzip
     claude-code
+
+    # Container tooling / GUIs (Docker engine itself is the service above)
+    lazydocker      # terminal UI for docker
+    podman-desktop  # desktop GUI (manages the docker socket too)
 
     # Wayland session utilities used directly by hyprland.conf binds
     hyprpolkitagent # polkit agent (see security.polkit above)
