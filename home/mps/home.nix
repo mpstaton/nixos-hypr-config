@@ -284,7 +284,9 @@
   # no dependency on a Garuda-provided wallpaper path).
   programs.hyprlock.enable = true;
 
-  # Ported helper scripts referenced by the binds above.
+  # Ported helper scripts — now owned by the stow dotfiles repo (~/.config/hypr),
+  # not HM. Disabled so HM doesn't clobber the stow symlinks.
+  /*
   xdg.configFile."hypr/scripts/idle_inhibitor.sh" = {
     source = ../../dotfiles/hypr/scripts/idle_inhibitor.sh;
     executable = true;
@@ -297,6 +299,7 @@
     source = ../../dotfiles/hypr/scripts/screenshot_window.sh;
     executable = true;
   };
+  */
 
   ####################################################################
   # Waybar — ported from garuda-hyprland-config/dotconfig/waybar/{config,style.css}
@@ -399,6 +402,8 @@
     style = builtins.readFile ../../dotfiles/waybar/style.css;
   };
 
+  # waybar scripts — now owned by the stow dotfiles repo, not HM.
+  /*
   xdg.configFile."waybar/scripts" = {
     source = ../../dotfiles/waybar/scripts;
     recursive = true;
@@ -406,12 +411,15 @@
   home.activation.makeWaybarScriptsExecutable = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     chmod +x $HOME/.config/waybar/scripts/* 2>/dev/null || true
   '';
+  */
 
   ####################################################################
   # wofi — ported from garuda-hyprland-config/dotconfig/wofi/{config,style.css}
   ####################################################################
   programs.wofi = {
-    enable = true;
+    # Disabled: wofi config now owned by the stow dotfiles repo (~/.config/wofi),
+    # not HM. Settings/style kept below as reference.
+    enable = false;
     settings = {
       location = "middle";
       show = "drun";

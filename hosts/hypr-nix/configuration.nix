@@ -245,6 +245,7 @@
     killall
     unzip
     claude-code
+    stow            # GNU Stow — manages the ~/nix-hypr-dotfiles symlink farm
 
     # Container tooling / GUIs (Docker engine itself is the service above)
     lazydocker      # terminal UI for docker
