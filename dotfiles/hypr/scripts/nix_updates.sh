@@ -10,11 +10,16 @@ BRANCH="nixos-26.05"
 REPO="https://github.com/NixOS/nixpkgs.git"
 
 if [ "${1:-}" = "--open" ]; then
-    exec kitty --hold --title "NixOS update" -e bash -lc \
-      "cd '$FLAKE'; echo; echo 'Preview what would change, then update:'; \
-       echo '  nix flake update'; \
-       echo '  nixos-rebuild build --flake .#hypr-nix && nix store diff-closures /run/current-system ./result'; \
-       echo '  sudo nixos-rebuild switch --flake .#hypr-nix'; echo; exec bash"
+    # System/update terminal = foot with a distinct maroon tint, so it's
+    # visually unmistakable vs the Ghostty dev terminal. footclient is instant
+    # (foot --server autostarts); fall back to a standalone foot if needed.
+    cmd="cd '$FLAKE'; echo; echo 'Preview what would change, then update:'; \
+         echo '  nix flake update'; \
+         echo '  nixos-rebuild build --flake .#hypr-nix && nix store diff-closures /run/current-system ./result'; \
+         echo '  sudo nixos-rebuild switch --flake .#hypr-nix'; echo; exec bash"
+    footclient --title "NixOS-update" -o colors.background=2b1a1f -o colors.foreground=e8e0e2 bash -lc "$cmd" 2>/dev/null \
+      || foot --title "NixOS-update" -o colors.background=2b1a1f -o colors.foreground=e8e0e2 bash -lc "$cmd"
+    exit 0
 fi
 
 emit() { printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' "$1" "$2" "$3"; }
