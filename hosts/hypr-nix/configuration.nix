@@ -265,6 +265,29 @@
     resources       # modern system monitor GUI
     onlyoffice-desktopeditors   # office suite (docs/sheets/slides)
     curtail         # image compressor GUI
+
+    # CLI tools & media utilities (ported from the Mac)
+    ffmpeg
+    imagemagick
+    tesseract       # OCR
+    ghostscript
+    fontforge
+    ripgrep         # `rg`
+    tree
+    zoxide          # smarter `cd` (needs shell init to fully work)
+    railway         # Railway.app CLI
+    flyctl          # Fly.io CLI  (you wrote "flytl")
+    glow            # markdown pager
+    git-lfs
+    pandoc
+    surrealdb
+    surrealist      # SurrealDB GUI / query explorer
+    tldr
+    tmux
+    turso-cli       # Turso CLI (`turso`)
+    zellij          # terminal multiplexer
+    atuin           # shell history (needs shell init to fully work)
+    # note: fish + starship already configured in home/mps/home.nix (not duplicated here)
     inputs.hunk.packages.${pkgs.system}.default   # `hunk` — terminal diff viewer
 
     # Wayland / desktop tools (were `nix profile install`-ed; now declarative)
