@@ -14,9 +14,50 @@ hosts/hypr-nix/
   configuration.nix                 # system-level config (boot, users, hyprland, etc.)
   disko-config.nix                  # declarative disk layout (edit device= before install)
   hardware-configuration.nix         # PLACEHOLDER — auto-generated during install, see below
-home/mps/home.nix                   # home-manager: hyprland.conf, waybar, wofi, mako, fish, starship
-dotfiles/                           # copied verbatim from garuda-hyprland-config (css, scripts)
+home/mps/home.nix                   # home-manager: fish, starship, git, dconf
+dotfiles/                           # live desktop config — hand-placed, NOT home-manager (see below)
+  hypr/hyprland.conf                # Hyprland: monitors, keybinds, autostart
+  hypr/scripts/                     # screenshot, idle-inhibitor, lock helpers
+  waybar/config.jsonc               # bar layout + modules
+  waybar/style.css                  # Nord theme
+  waybar/scripts/                   # network_traffic (live throughput) etc.
+  wpaperd/config.toml               # wallpaper daemon
+  ghostty/config                    # terminal (carbonfox, blur, Menlo)
+  wofi/style.css                    # launcher theme
 ```
+
+## Desktop config lives in `dotfiles/` — hand-placed, not home-manager
+
+The Hyprland/waybar/etc. configs in `dotfiles/` are **plain files copied to
+`~/.config/`**, not managed by home-manager. Home-manager's Lua backend
+miscompiled the Hyprland config, and a full `nixos-rebuild switch` would also
+clobber working GTK/Qt theming — so these stay as hand-placed files. `dotfiles/`
+is the source of truth; deploy by copying (e.g. `cp -r dotfiles/hypr ~/.config/`).
+
+**Waybar** (`dotfiles/waybar/`) is the ported Garuda bar: workspaces, live
+network throughput (center), CPU/RAM (→htop on click), battery, a rich
+pulseaudio module (scroll=volume, click=alsamixer, right-click=pavucontrol),
+network, tray, a calendar with today highlighted (scroll=change month,
+right-click=year view), and an nwgbar power button. Icons are Material Design /
+FontAwesome glyphs from a Nerd Font.
+
+### Two NixOS gotchas that bit us (keep in mind)
+
+- **Shebangs:** NixOS has **no `/bin/bash`** (only `/bin/sh`). Any script with
+  `#!/bin/bash` silently fails to launch (this broke the waybar network module
+  and affects the Garuda-era `hypr/scripts/`). Use `#!/usr/bin/env bash`.
+- **Monitor name:** this panel is `eDP-1` (not Garuda's `eDP-2`), scaled `1.33`.
+  Wrong name = the `monitor=` line is ignored and you get default 2x scale.
+
+### Assets NOT in this repo (sourced from the Nix store, keep them local)
+
+- **Wallpaper:** `~/Pictures/Wallpapers/MilkyWay.png`, copied out of
+  `pkgs.plasma-workspace-wallpapers` (so GC can't delete it). `wpaperd`
+  points at it; swap the `path` in `wpaperd/config.toml` to change.
+- **Nerd Font:** `~/.local/share/fonts/SymbolsNerdFontMono-Regular.ttf`, copied
+  from kitty's bundled fonts, then `fc-cache -f`. Needed or all bar icons are
+  tofu boxes. (Cleaner long-term: add `pkgs.nerd-fonts.symbols-only` to
+  `fonts.packages` in `configuration.nix`.)
 
 ## About `hardware-configuration.nix`
 

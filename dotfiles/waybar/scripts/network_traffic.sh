@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # network_traffic.sh [-tPOLLING_INTERVAL] [NETWORK_INTERFACE...]
 
@@ -10,9 +10,9 @@ ifaces=($@)
 # `snore` adapted from https://blog.dhampir.no/content/sleeping-without-a-subprocess-in-bash-and-how-to-sleep-forever
 # without MacOS workaround, TODO: with _snore_fd initialized separatedly, also i dont touch IFS so dont bother with it
 snore() {
-    local IFS
-    [[ -n "${_snore_fd:-}" ]] || { exec {_snore_fd}<> <(:); } 2>/dev/null
-    read ${1:+-t "$1"} -u $_snore_fd || :
+    # Original used a process-substitution fd to avoid spawning sleep; that
+    # exits under Waybar's exec env, so use a plain sleep (negligible cost).
+    sleep "${1:-1}"
 }
 
 human_readable() {
