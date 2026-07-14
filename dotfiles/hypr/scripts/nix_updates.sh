@@ -33,7 +33,8 @@ if [ "$locked" = "$remote" ]; then
     exit 0
 fi
 
-# best-effort commit count (unauthenticated GitHub compare API; may be rate-limited)
-n=$(curl -sf --max-time 8 "https://api.github.com/repos/NixOS/nixpkgs/compare/$locked...$remote" 2>/dev/null | jq -r '.ahead_by // empty' 2>/dev/null)
-if [ -n "${n:-}" ]; then text="󰚰 $n"; detail="$n new nixpkgs commits on $BRANCH"; else text="󰚰"; detail="nixpkgs $BRANCH has moved past your lock"; fi
-emit "$text" "$detail\\nClick to see update commands" "has-updates"
+# NOTE: we deliberately do NOT show a commit count — nixpkgs branch commits
+# (inflated by "staging" merges) are not the same as updates to installed
+# packages. The only accurate "what of mine changes" list comes from building
+# the candidate and running `nvd`, which the click action does.
+emit "󰚰" "Updates available on $BRANCH.\\nClick to build the new system and see exactly which of your installed packages change (nvd)." "has-updates"

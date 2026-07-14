@@ -37,7 +37,10 @@
   #     already give you this, declaratively, for the whole system
   ####################################################################
   wayland.windowManager.hyprland = {
-    enable = true;
+    # Disabled: HM's Lua backend miscompiles this and writes an ignored
+    # hyprland.lua; the REAL config is hand-placed at ~/.config/hypr/hyprland.conf
+    # (moving to a stow repo). Leaving the settings below as dead reference.
+    enable = false;
     xwayland.enable = true;
     # UWSM (enabled in configuration.nix) manages the session lifecycle;
     # the Home Manager module's own systemd integration must stay off.
@@ -299,7 +302,10 @@
   # Waybar — ported from garuda-hyprland-config/dotconfig/waybar/{config,style.css}
   ####################################################################
   programs.waybar = {
-    enable = true;
+    # Disabled: this wrote ~/.config/waybar/config (stale settings), which waybar
+    # loads BEFORE our config.jsonc — shadowing the real bar (lost icons/modules).
+    # The real bar is hand-placed at ~/.config/waybar (moving to a stow repo).
+    enable = false;
     settings = {
       mainBar = {
         layer = "top";
