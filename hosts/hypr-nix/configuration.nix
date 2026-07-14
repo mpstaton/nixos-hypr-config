@@ -254,6 +254,7 @@
     jujutsu         # `jj` — git-compatible VCS
     helix           # `hx` — modal terminal editor
     nvd             # nix closure diff (used by the update-preview ritual)
+    vscode          # VS Code (unfree; allowUnfree is set below)
     inputs.hunk.packages.${pkgs.system}.default   # `hunk` — terminal diff viewer
 
     # Wayland / desktop tools (were `nix profile install`-ed; now declarative)
