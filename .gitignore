@@ -1,0 +1,7 @@
+# Nix build output symlinks
+result
+result-*
+
+# Editor / OS cruft
+*.swp
+.direnv/
