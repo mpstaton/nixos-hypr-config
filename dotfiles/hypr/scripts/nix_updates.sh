@@ -22,7 +22,12 @@ fi
 
 emit() { printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' "$1" "$2" "$3"; }
 
-locked=$(jq -r '.nodes.nixpkgs.locked.rev // empty' "$FLAKE/flake.lock" 2>/dev/null)
+# Resolve the ROOT's nixpkgs node. When another input (e.g. hunk) also has a
+# nixpkgs, Nix renames the root's to "nixpkgs_2" and the bare "nixpkgs" node
+# becomes that other input's — so hard-coding .nodes.nixpkgs reads the WRONG
+# pin. Follow root.inputs.nixpkgs to the real node name.
+node=$(jq -r '.nodes.root.inputs.nixpkgs // "nixpkgs"' "$FLAKE/flake.lock" 2>/dev/null)
+locked=$(jq -r --arg n "$node" '.nodes[$n].locked.rev // empty' "$FLAKE/flake.lock" 2>/dev/null)
 [ -z "$locked" ] && { emit "" "nixpkgs rev not found in flake.lock" "error"; exit 0; }
 
 remote=$(GIT_TERMINAL_PROMPT=0 timeout 8 git ls-remote "$REPO" "$BRANCH" 2>/dev/null | awk 'NR==1{print $1}')
