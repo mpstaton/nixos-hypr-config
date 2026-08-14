@@ -89,15 +89,31 @@ lock-session`, so **30 minutes is the effective ceiling** — idle past that and
 you get a password prompt regardless of the lock timeout. Raise both if you
 want longer.
 
+### Fonts — declarative, nothing to hand-place
+
+Both Nerd Fonts the desktop needs come from `fonts.packages` in
+`configuration.nix` and are installed by a rebuild. Nothing goes in
+`~/.local/share/fonts/`, and no `fc-cache` step is needed:
+
+| Package | Provides | Used by |
+|---------|----------|---------|
+| `nerd-fonts.symbols-only` | `Symbols Nerd Font Mono` | waybar `style.css` — icons are tofu boxes without it |
+| `nerd-fonts.jetbrains-mono` | `JetBrainsMono Nerd Font` | ghostty `font-family` |
+
+Earlier this repo told you to copy `SymbolsNerdFontMono-Regular.ttf` out of
+kitty's bundle into `~/.local/share/fonts/`. That was superseded — the manual
+copy was byte-identical to the store's and was deleted 2026-08-14. Two copies
+of one family is a fontconfig ambiguity, and a hand-placed font is one more
+thing a fresh clone silently won't restore. Verify with
+`fc-match "Symbols Nerd Font Mono"`.
+
 ### Assets NOT in this repo (sourced from the Nix store, keep them local)
 
 - **Wallpaper:** `~/Pictures/Wallpapers/MilkyWay.png`, copied out of
   `pkgs.plasma-workspace-wallpapers` (so GC can't delete it). `wpaperd`
-  points at it; swap the `path` in `wpaperd/config.toml` to change.
-- **Nerd Font:** `~/.local/share/fonts/SymbolsNerdFontMono-Regular.ttf`, copied
-  from kitty's bundled fonts, then `fc-cache -f`. Needed or all bar icons are
-  tofu boxes. (Cleaner long-term: add `pkgs.nerd-fonts.symbols-only` to
-  `fonts.packages` in `configuration.nix`.)
+  points at it; swap the `path` in `wpaperd/config.toml` to change. This is
+  the **last** hand-placed asset — a fresh clone will not restore it, and
+  `wpaperd` silently shows nothing if the path is missing.
 
 ## About `hardware-configuration.nix`
 
