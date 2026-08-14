@@ -16,26 +16,38 @@ hosts/hypr-nix/
   hardware-configuration.nix         # PLACEHOLDER — auto-generated during install, see below
 home/mps/home.nix                   # home-manager: fish, starship, git, dconf,
                                     #   hypridle/hyprlock (see "Idle, lock, suspend")
-dotfiles/                           # live desktop config — hand-placed, NOT home-manager (see below)
-  hypr/hyprland.conf                # Hyprland: monitors, keybinds, autostart
-  hypr/scripts/                     # screenshot, idle-inhibitor, lock helpers
-  waybar/config.jsonc               # bar layout + modules
-  waybar/style.css                  # Nord theme
-  waybar/scripts/                   # network_traffic (live throughput) etc.
-  wpaperd/config.toml               # wallpaper daemon
-  ghostty/config                    # terminal (carbonfox, blur, Menlo)
-  wofi/style.css                    # launcher theme
 ```
 
-## Desktop config lives in `dotfiles/` — hand-placed, not home-manager
+(Desktop dotfiles are **not** in this repo — see below.)
 
-The Hyprland/waybar/etc. configs in `dotfiles/` are **plain files copied to
-`~/.config/`**, not managed by home-manager. Home-manager's Lua backend
-miscompiled the Hyprland config, and a full `nixos-rebuild switch` would also
-clobber working GTK/Qt theming — so these stay as hand-placed files. `dotfiles/`
-is the source of truth; deploy by copying (e.g. `cp -r dotfiles/hypr ~/.config/`).
+## Desktop config lives in a separate repo: `nix-hypr-dotfiles`
 
-**Waybar** (`dotfiles/waybar/`) is the ported Garuda bar: workspaces, live
+The Hyprland/waybar/wofi/wpaperd/ghostty configs are **not** managed by
+home-manager and **not** stored here. They live in their own GNU Stow repo:
+
+```
+https://github.com/mpstaton/nix-hypr-dotfiles   ->   ~/nix-hypr-dotfiles
+```
+
+Why not home-manager: its Lua backend miscompiled the Hyprland config, and
+`programs.waybar` wrote a stale `~/.config/waybar/config` that shadowed the
+real bar. Why a separate repo: these change far more often than the system
+config, and Stow symlinks them into place without a rebuild.
+
+Deploy with `stow` from inside that repo (`stow hypr waybar wofi wpaperd
+ghostty`), which symlinks e.g. `~/.config/hypr -> ~/nix-hypr-dotfiles/hypr/.config/hypr`.
+Edit the files in `~/.config/` directly — you are editing the repo through the
+symlink — then commit and push there, not here.
+
+> This repo used to carry a duplicate `dotfiles/` copy. It was deleted once the
+> Stow repo took over; the two had already drifted (the stale copy was missing
+> the `Super+Shift+M` master-layout fix and the JetBrainsMono/ghostty change).
+> **One copy, one remote.** Don't reintroduce it.
+
+**The one exception:** `hypridle`/`hyprlock` *are* home-manager managed, from
+`home/mps/home.nix` in this repo. See "Idle, lock, and suspend" below.
+
+**Waybar** is the ported Garuda bar: workspaces, live
 network throughput (center), CPU/RAM (→htop on click), battery, a rich
 pulseaudio module (scroll=volume, click=alsamixer, right-click=pavucontrol),
 network, tray, a calendar with today highlighted (scroll=change month,
