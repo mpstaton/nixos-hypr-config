@@ -29,7 +29,7 @@
   hardware.enableRedistributableFirmware = true;
 
   # CHANGE ME — pick your real time zone (`timedatectl list-timezones`).
-  time.timeZone = "America/New_York";
+  time.timeZone = "America/Chicago";
   i18n.defaultLocale = "en_US.UTF-8";
   console.keyMap = "us";
 
@@ -314,6 +314,9 @@
     networkmanagerapplet # nm-applet in the tray
 
     # Launcher / menus / bar
+    waybar          # status bar (exec-once in hyprland.conf); HM's
+                    # programs.waybar is disabled so the bar isn't installed
+                    # by that module — declare the package explicitly here.
     wofi
     nwg-launchers # nwgbar (power menu)
     nwg-drawer

@@ -264,7 +264,7 @@
           on-resume = "brightnessctl -rd rgb:kbd_backlight";
         }
         {
-          timeout = 300;
+          timeout = 900; # 15 min — home desktop, don't nag for the password
           on-timeout = "loginctl lock-session";
         }
         {

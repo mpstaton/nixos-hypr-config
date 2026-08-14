@@ -14,7 +14,8 @@ hosts/hypr-nix/
   configuration.nix                 # system-level config (boot, users, hyprland, etc.)
   disko-config.nix                  # declarative disk layout (edit device= before install)
   hardware-configuration.nix         # PLACEHOLDER — auto-generated during install, see below
-home/mps/home.nix                   # home-manager: fish, starship, git, dconf
+home/mps/home.nix                   # home-manager: fish, starship, git, dconf,
+                                    #   hypridle/hyprlock (see "Idle, lock, suspend")
 dotfiles/                           # live desktop config — hand-placed, NOT home-manager (see below)
   hypr/hyprland.conf                # Hyprland: monitors, keybinds, autostart
   hypr/scripts/                     # screenshot, idle-inhibitor, lock helpers
@@ -48,6 +49,33 @@ FontAwesome glyphs from a Nerd Font.
   and affects the Garuda-era `hypr/scripts/`). Use `#!/usr/bin/env bash`.
 - **Monitor name:** this panel is `eDP-1` (not Garuda's `eDP-2`), scaled `1.33`.
   Wrong name = the `monitor=` line is ignored and you get default 2x scale.
+- **Waybar package vs. module:** `programs.waybar` is deliberately disabled in
+  `home/mps/home.nix` (it wrote a stale `~/.config/waybar/config` that shadowed
+  the hand-placed bar). Disabling the module also stops it installing the
+  *package*, so `waybar` is declared explicitly in `configuration.nix`'s
+  `systemPackages`. Remove that and the bar silently stops launching.
+
+## Idle, lock, and suspend
+
+Unlike the rest of the desktop config, **hypridle/hyprlock *are* home-manager
+managed** (`services.hypridle` in `home/mps/home.nix`) — `~/.config/hypr/hypridle.conf`
+is a read-only symlink into the Nix store, so editing it by hand does nothing.
+Change the timeouts in `home.nix` and rebuild.
+
+The cascade, in order:
+
+| Idle | Action | Password on return? |
+|------|--------|---------------------|
+| 2.5 min (150s) | dim screen, keyboard backlight off | no |
+| 5.5 min (330s) | display off (DPMS) | no |
+| **15 min (900s)** | **lock session** | **yes** |
+| 30 min (1800s) | suspend | yes |
+
+This is a stationary home desktop, so the lock is deliberately relaxed to 15
+minutes. Note the 30-minute suspend runs `before_sleep_cmd = loginctl
+lock-session`, so **30 minutes is the effective ceiling** — idle past that and
+you get a password prompt regardless of the lock timeout. Raise both if you
+want longer.
 
 ### Assets NOT in this repo (sourced from the Nix store, keep them local)
 
@@ -122,7 +150,7 @@ reboot
 ### 3. After first boot
 
 - Set your git identity for real in `home/mps/home.nix` (`programs.git.userName`/`userEmail`).
-- Set `time.timeZone` in `configuration.nix`.
+- Set `time.timeZone` in `configuration.nix` (currently `America/Chicago`).
 - Uncomment the GPU driver block in `configuration.nix` matching your hardware
   (`lspci -k | grep -A2 -E "(VGA|3D)"` tells you which).
 - Bring over LazyVim / Helix configs from `garuda-hyprland-config` directly
@@ -133,6 +161,31 @@ reboot
   an older generation from the systemd-boot menu at boot — this is the actual
   fix for the "didn't update often enough and it broke" problem: every switch
   is a new, independently bootable generation, not an in-place mutation.
+
+## Keeping it up to date
+
+```bash
+cd ~/code/nixos-hypr-config
+nix flake update                    # bump all inputs in flake.lock
+# or bump just one:  nix flake update nixpkgs
+
+# validate before committing to a switch (no sudo, builds into the store)
+nix build --no-link .#nixosConfigurations.hypr-nix.config.system.build.toplevel
+
+sudo nixos-rebuild switch --flake .#hypr-nix
+```
+
+Check what you're actually running vs. what's built:
+
+```bash
+nixos-rebuild list-generations | head        # is the newest one Current?
+readlink -f /run/booted-system               # equal to /run/current-system?
+```
+
+If `booted` and `current` differ, the switch landed but the running kernel is
+still the old one — reboot to pick it up. Committing `flake.lock` is what makes
+a generation reproducible; a stray `result` symlink in the repo root is a
+leftover GC root from `nix build` and is safe to delete.
 
 ## Not yet ported (low priority, port if you miss them)
 
