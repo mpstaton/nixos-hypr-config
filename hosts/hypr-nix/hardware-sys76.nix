@@ -70,37 +70,46 @@
   ####################################################################
   # NVIDIA RTX 4070 Max-Q — proprietary driver + PRIME offload
   ####################################################################
-  # CURRENTLY OFF. The card runs on the in-kernel `nouveau` driver, which
-  # cannot reclock Ada (40-series) silicon — it sits at boot clocks and has no
-  # CUDA/NVENC. Functional, but a fraction of what the card can do.
+  # PRIME OFFLOAD mode: the Intel iGPU drives the internal panel full-time and
+  # the RTX 4070 stays powered down until an app is explicitly launched on it
+  # with `nvidia-offload <cmd>`. Best battery/thermals, and it keeps the
+  # display path on the chip that was already working — which is why this is
+  # much less likely to black-screen than making NVIDIA primary.
   #
-  # Uncomment the block below to switch to the proprietary driver. Bus IDs are
-  # already filled in for THIS machine (lspci 00:02.0 -> PCI:0:2:0,
-  # 01:00.0 -> PCI:1:0:0), so no further hardware lookup is needed.
+  # Bus IDs below are for THIS machine (lspci 00:02.0 -> PCI:0:2:0,
+  # 01:00.0 -> PCI:1:0:0).
   #
-  # This is the change most likely to produce a black screen on a hybrid
-  # laptop running Hyprland. If that happens: reboot, pick the previous
-  # generation from the systemd-boot menu, and you are back — no live USB.
-  # Enable it while you are sitting at the machine, not remotely.
+  # If this ever does black-screen: reboot, pick the previous generation from
+  # the systemd-boot menu. No live USB needed.
+  services.xserver.videoDrivers = [ "nvidia" ];
+  hardware.nvidia = {
+    modesetting.enable = true;
+    open = true; # open kernel module — supported and recommended on Ada
+    nvidiaSettings = true;
+    powerManagement.enable = true; # correct suspend/resume on hybrid laptops
+    package = config.boot.kernelPackages.nvidiaPackages.stable;
+    prime = {
+      offload.enable = true;
+      offload.enableOffloadCmd = true; # gives you `nvidia-offload <cmd>`
+      intelBusId = "PCI:0:2:0";
+      nvidiaBusId = "PCI:1:0:0";
+    };
+  };
+
+  # DELIBERATELY NOT SET — these are the standard Hyprland+NVIDIA env vars, and
+  # they are WRONG for offload mode:
   #
-  # Pair it with the env vars in home/mps/home.nix's hyprland `env` list
-  # (already noted in configuration.nix's graphics comment):
-  #   "LIBVA_DRIVER_NAME,nvidia"
-  #   "__GLX_VENDOR_LIBRARY_NAME,nvidia"
-  #   "ELECTRON_OZONE_PLATFORM_HINT,auto"
+  #   LIBVA_DRIVER_NAME=nvidia        would override the iHD setting above and
+  #                                   break Intel VA-API video decode. The
+  #                                   iGPU drives the panel here, so VA-API
+  #                                   must stay on iHD.
+  #   __GLX_VENDOR_LIBRARY_NAME=nvidia  globally forces every GL app onto the
+  #                                   dGPU, defeating offload entirely. The
+  #                                   `nvidia-offload` wrapper sets this
+  #                                   per-app, which is the point.
   #
-  # services.xserver.videoDrivers = [ "nvidia" ];
-  # hardware.nvidia = {
-  #   modesetting.enable = true;
-  #   open = true; # open kernel module — supported and recommended on Ada
-  #   nvidiaSettings = true;
-  #   powerManagement.enable = true; # correct suspend/resume on hybrid laptops
-  #   package = config.boot.kernelPackages.nvidiaPackages.stable;
-  #   prime = {
-  #     offload.enable = true;
-  #     offload.enableOffloadCmd = true; # gives you `nvidia-offload <cmd>`
-  #     intelBusId = "PCI:0:2:0";
-  #     nvidiaBusId = "PCI:1:0:0";
-  #   };
-  # };
+  # They belong in a PRIME *sync* setup (NVIDIA drives everything: more
+  # performance, worse battery, higher chance of Hyprland breakage). To switch
+  # to that later, replace the `prime` block above with `prime.sync.enable =
+  # true;` and then those two vars become correct.
 }

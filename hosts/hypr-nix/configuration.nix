@@ -195,12 +195,15 @@
   #   };
   # };
   #
-  # Also add to home/mps/home.nix's hyprland `env` list once enabled (fixes
-  # the two most common hybrid-graphics symptoms — GLX vendor mismatch and
-  # Electron/Obsidian/Joplin flicker from running under XWayland):
-  #   "LIBVA_DRIVER_NAME,nvidia"
-  #   "__GLX_VENDOR_LIBRARY_NAME,nvidia"
-  #   "ELECTRON_OZONE_PLATFORM_HINT,auto"
+  # NOTE: an earlier version of this comment said to add "LIBVA_DRIVER_NAME,
+  # nvidia" and "__GLX_VENDOR_LIBRARY_NAME,nvidia" to home/mps/home.nix's
+  # hyprland `env` list. Both halves of that were wrong:
+  #   - home.nix's `wayland.windowManager.hyprland` is DISABLED (dead
+  #     reference). The live config is hyprland.conf in the Stow repo
+  #     ~/nix-hypr-dotfiles, edited via the ~/.config/hypr symlink.
+  #   - Those two vars are wrong for PRIME *offload* anyway — they would
+  #     break Intel VA-API and force every app onto the dGPU. See the long
+  #     explanation in hardware-sys76.nix.
 
   ####################################################################
   # Audio / Bluetooth
