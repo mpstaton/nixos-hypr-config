@@ -296,7 +296,11 @@
     zellij          # terminal multiplexer
     atuin           # shell history (needs shell init to fully work)
     # note: fish + starship already configured in home/mps/home.nix (not duplicated here)
-    inputs.hunk.packages.${pkgs.system}.default   # `hunk` — terminal diff viewer
+    # NB: `pkgs.stdenv.hostPlatform.system`, not `pkgs.system` — the latter is
+    # deprecated and makes every evaluation print
+    #   evaluation warning: 'system' has been renamed to/replaced by
+    #   'stdenv.hostPlatform.system'
+    inputs.hunk.packages.${pkgs.stdenv.hostPlatform.system}.default # `hunk` — terminal diff viewer
 
     # Wayland / desktop tools (were `nix profile install`-ed; now declarative)
     hyprshot        # screenshots (Print binds)
