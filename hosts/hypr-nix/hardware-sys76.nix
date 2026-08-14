@@ -63,8 +63,15 @@
   ];
   environment.sessionVariables.LIBVA_DRIVER_NAME = "iHD";
 
+  # Graphics diagnostics. Both are dormant CLI tools — nothing runs in the
+  # background — but on a two-GPU machine "which GPU is this app actually
+  # using?" is the first question worth asking when something misbehaves.
   environment.systemPackages = with pkgs; [
-    libva-utils # provides `vainfo` for checking the above
+    libva-utils # `vainfo` — confirms VA-API decode is on the iGPU
+    mesa-demos # `glxinfo` / `glxgears` — confirms PRIME offload routing:
+    #   glxinfo | grep "OpenGL renderer"                 -> Intel
+    #   nvidia-offload glxinfo | grep "OpenGL renderer"  -> NVIDIA
+    # Same answer from both means offload is NOT routing.
   ];
 
   ####################################################################
