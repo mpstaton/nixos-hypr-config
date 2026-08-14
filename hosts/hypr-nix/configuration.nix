@@ -3,6 +3,13 @@
 {
   imports = [
     ./hardware-configuration.nix
+
+    # MACHINE-SPECIFIC — remove this line on a different computer.
+    # Everything unique to "sys76" (System76 Serval WS: NVIDIA/Intel hybrid
+    # graphics, System76 vendor support, Raptor Lake microcode, VA-API) is
+    # quarantined in this one file so the rest of this config stays portable.
+    # A new machine gets its own hardware-<name>.nix; nothing else changes.
+    ./hardware-sys76.nix
   ];
 
   ####################################################################

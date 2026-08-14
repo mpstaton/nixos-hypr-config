@@ -14,6 +14,7 @@ hosts/hypr-nix/
   configuration.nix                 # system-level config (boot, users, hyprland, etc.)
   disko-config.nix                  # declarative disk layout (edit device= before install)
   hardware-configuration.nix         # PLACEHOLDER — auto-generated during install, see below
+  hardware-sys76.nix                # MACHINE-SPECIFIC — this computer only, see below
 home/mps/home.nix                   # home-manager: fish, starship, git, dconf,
                                     #   hypridle/hyprlock (see "Idle, lock, suspend")
 ```
@@ -114,6 +115,24 @@ thing a fresh clone silently won't restore. Verify with
   points at it; swap the `path` in `wpaperd/config.toml` to change. This is
   the **last** hand-placed asset — a fresh clone will not restore it, and
   `wpaperd` silently shows nothing if the path is missing.
+
+## Moving this setup to a different computer
+
+Anything specific to *this* machine ("sys76" — a System76 Serval WS) is
+quarantined in **`hosts/hypr-nix/hardware-sys76.nix`**: NVIDIA/Intel hybrid
+graphics, System76 vendor support, Raptor Lake microcode, VA-API. It is pulled
+in by exactly one line in `configuration.nix`'s `imports`.
+
+To reuse this config on new hardware, delete that one line. Everything else —
+Hyprland, waybar, pipewire, fonts, fish, the whole desktop — is hardware-generic
+and keeps working, because `hardware.graphics.enable` plus mesa/nouveau gets you
+a desktop on any GPU vendor. Then write a `hardware-<name>.nix` for the new
+machine and import that instead. One file per machine; don't merge machine
+details back into `configuration.nix`.
+
+> **Nix gotcha:** flakes only see files that git tracks. A newly created `.nix`
+> file fails to evaluate with *"Path ... is not tracked by Git"* until you
+> `git add` it — staging is enough, no commit needed.
 
 ## About `hardware-configuration.nix`
 
