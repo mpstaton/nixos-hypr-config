@@ -60,6 +60,24 @@
   ####################################################################
   # Hard lockup detector
   ####################################################################
+  # CAVEAT — THIS MAY NOT ACTUALLY WORK ON THIS MACHINE. Measured 2026-08-18:
+  # with nmi_watchdog forced to 1 at runtime and watchdog_thresh=10, the NMI
+  # row in /proc/interrupts stayed at 0 across all 32 CPUs for 131 seconds
+  # (expect ~400). The kernel prints "NMI watchdog: Enabled. Permanently
+  # consumes one hw-PMU counter" and the sysctl reads 1, but the perf event
+  # never fires and no failure is logged. kernel.nmi_watchdog also reads 0
+  # after boot despite being set both here and on the kernel command line.
+  # Suspected hybrid P/E-core PMU issue on the i9-14900HX — unconfirmed.
+  #
+  # Consequence: the chain this file is built on (detector fires -> panic ->
+  # pstore) is broken at the first link, so hardlockup_panic below is inert.
+  # The buddy detector, which needs no PMU counter, is not compiled into this
+  # kernel (CONFIG_HARDLOCKUP_DETECTOR_BUDDY is not set), so there is no
+  # drop-in fallback. What still works is the hardware watchdog at the bottom
+  # of this file and panic_on_oops — treat those as the real value here.
+  # Left in place because it costs nothing and may start working on a future
+  # kernel; re-test with the /proc/interrupts NMI count before trusting it.
+  #
   # The NMI/perf-based hard lockup detector runs off a non-maskable
   # interrupt, so it still fires when the box is wedged badly enough that
   # ordinary interrupts and scheduling have stopped — the exact situation
