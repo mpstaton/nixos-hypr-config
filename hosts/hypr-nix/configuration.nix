@@ -10,6 +10,14 @@
     # quarantined in this one file so the rest of this config stays portable.
     # A new machine gets its own hardware-<name>.nix; nothing else changes.
     ./hardware-sys76.nix
+
+    # Crash capture. Arms the hard lockup detector, panics (and so writes
+    # to pstore) instead of freezing silently, and uses the hardware
+    # watchdog to auto-reboot a wedged machine. Added after the unexplained
+    # hard freeze of 2026-08-17, which left no evidence because nothing was
+    # configured to record one. Portable — nothing in it is sys76-specific
+    # except the iTCO watchdog, which is present on any Intel platform.
+    ./crash-diagnostics.nix
   ];
 
   ####################################################################
