@@ -67,6 +67,19 @@
   # rejected) and installs the system-wide completions.
   programs.fish.enable = true;
 
+  # The single largest source of local compilation on this machine. Fish
+  # generates a completion derivation from man pages for EVERY package in the
+  # system path — measured at 349 of the 575 derivations (61%) a nixpkgs bump
+  # rebuilds. They can never be substituted from cache.nixos.org because they
+  # are a function of this machine's specific package set, so Hydra has never
+  # built them and never will.
+  #
+  # What is lost: man-page-derived completions for tools that ship no native
+  # fish completions. Fish's own built-in completions, and completions shipped
+  # by packages themselves, are unaffected. Flip back to true if a command you
+  # use often stops completing its flags.
+  programs.fish.generateCompletions = false;
+
   ####################################################################
   # Docker — enabled as a SERVICE, not just a package. This one line sets up
   # the daemon, the `docker` CLI, containerd (bundled — no separate install),
@@ -228,7 +241,11 @@
   services.pipewire = {
     enable = true;
     alsa.enable = true;
-    alsa.support32Bit = true;
+    # alsa.support32Bit deliberately off. It only matters for 32-bit apps that
+    # play audio (Steam, Wine, Proton), none of which are installed here, and
+    # it drags i686 builds of the audio stack into every update. Hydra's i686
+    # coverage is thin, so those miss the binary cache and compile locally —
+    # a documented cause of oversized rebuilds. Re-enable it with Steam/Wine.
     pulse.enable = true;
     wireplumber.enable = true;
   };
