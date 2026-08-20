@@ -38,12 +38,14 @@
   };
 
   outputs = { self, nixpkgs, home-manager, disko, ... }@inputs:
-    let
-      system = "x86_64-linux";
-    in
     {
+      # No `system` argument here on purpose: the platform is declared by the
+      # host itself, as `nixpkgs.hostPlatform` in configuration.nix. Passing
+      # `system` to nixosSystem is the older idiom and is what populates the
+      # deprecated `pkgs.system`, the warning silenced in c8e9073. Keeping the
+      # platform next to the hardware it describes also means a second host
+      # can differ without touching this file.
       nixosConfigurations.hypr-nix = nixpkgs.lib.nixosSystem {
-        inherit system;
         specialArgs = { inherit inputs; };
         modules = [
           # disko.nixosModules.disko and disko-config.nix are deliberately

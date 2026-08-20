@@ -108,53 +108,20 @@
     };
   };
 
-  programs.starship = {
-    enable = true;
-    settings = {
-      username = {
-        format = " [╭─$user]($style)@";
-        show_always = true;
-        style_root = "bold red";
-        style_user = "bold red";
-      };
-      hostname = {
-        disabled = false;
-        format = "[$hostname]($style) in ";
-        ssh_only = false;
-        style = "bold dimmed red";
-        trim_at = "-";
-      };
-      directory = {
-        style = "purple";
-        truncate_to_repo = true;
-        truncation_length = 0;
-        truncation_symbol = "repo: ";
-      };
-      sudo.disabled = false;
-      git_status = {
-        ahead = "⇡\${count}";
-        behind = "⇣\${count}";
-        deleted = "x";
-        diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
-        style = "white";
-      };
-      cmd_duration = {
-        disabled = false;
-        format = "took [$duration]($style)";
-        min_time = 1;
-      };
-      character = {
-        error_symbol = " [×](bold red)";
-        success_symbol = " [╰─λ](bold red)";
-      };
-      nix_shell.symbol = " ";
-      git_branch.symbol = " ";
-      rust.symbol = " ";
-      nodejs.symbol = " ";
-      python.symbol = " ";
-      docker_context.symbol = " ";
-    };
-  };
+  # Starship is enabled here for the fish integration only — the prompt
+  # itself lives in the nix-hypr-dotfiles stow repo, at
+  # starship/.config/starship.toml.
+  #
+  # Deliberately no `settings`. Home Manager only writes
+  # ~/.config/starship.toml when settings != {} (see the module's
+  # `hasGeneratedConfig`), so leaving it empty frees that path for stow to
+  # own. Add a single setting here and HM reclaims the file, which makes
+  # `stow starship` fail on a conflict.
+  #
+  # This follows the same rule as hypr/waybar/wofi/ghostty: config that gets
+  # tuned often belongs in the stow repo, where an edit takes effect on the
+  # next prompt instead of on the next rebuild.
+  programs.starship.enable = true;
 
   programs.git = {
     enable = true;

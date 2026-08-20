@@ -55,9 +55,17 @@
     isNormalUser = true;
     description = "mps";
     extraGroups = [ "networkmanager" "wheel" "video" "input" "audio" "docker" ];
-    shell = pkgs.bash; # default login shell; fish is still installed below
+    # fish, not bash. Everything in home.nix's shell config — the starship
+    # prompt, and the ls/cat/upd/gc/rollback aliases — is written for fish
+    # only, so a bash login silently got none of it. The starship prompt also
+    # needs fish for `right_format`; bash has no right-hand prompt, so the
+    # git block would just not render there.
+    shell = pkgs.fish;
   };
-  programs.fish.enable = true; # available via `fish`, just not the default
+  # Must stay enabled at system level, not just in home-manager: this is what
+  # registers fish in /etc/shells (a login shell missing from that list is
+  # rejected) and installs the system-wide completions.
+  programs.fish.enable = true;
 
   ####################################################################
   # Docker — enabled as a SERVICE, not just a package. This one line sets up
@@ -386,6 +394,10 @@
   ####################################################################
   # Nix itself
   ####################################################################
+  # Declared here rather than passed as nixosSystem's `system` argument —
+  # see the comment in flake.nix.
+  nixpkgs.hostPlatform = "x86_64-linux";
+
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.settings.auto-optimise-store = true;
   nix.gc = {
