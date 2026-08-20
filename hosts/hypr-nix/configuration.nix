@@ -402,5 +402,16 @@
   # system.autoUpgrade.flags = [ "--update-input" "nixpkgs" "-L" ];
   # system.autoUpgrade.dates = "weekly";
 
+  # Stamp each generation with the commit it was built from, so
+  # `nixos-rebuild list-generations` shows a revision instead of "Unknown".
+  # Without this a generation is only identifiable by its nixpkgs version,
+  # which says nothing about what *this* repo looked like at build time —
+  # unhelpful when bisecting a regression across generations.
+  #
+  # A build from an uncommitted tree reports its dirtyRev (the commit plus a
+  # "-dirty" suffix), so a generation built from unsaved edits is visibly
+  # marked as such rather than silently claiming to be its parent commit.
+  system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or "dirty";
+
   system.stateVersion = "26.05";
 }
