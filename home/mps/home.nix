@@ -152,6 +152,13 @@
     tealdeer
     yazi
     lazygit
+
+    # Node 24 for deepseek-harness (dsh), which is built from source at
+    # ~/code/deepseek-harness rather than packaged — it ships no flake, and
+    # its pnpm monorepo would need a vendored-deps hash that breaks on every
+    # upstream bump of a project whose README promises breaking changes.
+    # Its engines field wants ^22.19 || >=24. pnpm comes from configuration.nix.
+    nodejs_24
   ];
 
   ####################################################################
