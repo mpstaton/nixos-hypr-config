@@ -189,22 +189,105 @@
   # that's the qt5ct/Kvantum "Sweet" port the cursor/GTK comment defers.)
   ####################################################################
   gtk = {
-    # Disabled: keep your live breeze-dark GTK theme (Plasma). HM refused to
-    # overwrite the existing gtk-3.0/gtk-4.0 settings + ~/.gtkrc-2.0. Your GTK
-    # apps are already dark via those live files; the dconf prefer-dark hint
-    # below still drives Electron/browser dark mode. Flip back to true (and
-    # remove the live files) if you want HM to own the theme.
-    enable = false;
+    # Enabled 2026-08-20. Previously false, on the premise that the live
+    # kde-gtk-config files already made GTK apps dark — they did not. Those
+    # files set no gtk-theme-name at all (~/.gtkrc-2.0 had it literally empty),
+    # and their colors.css was 5KB of @define-color with zero applied rules,
+    # so Thunar fell back to stock light Adwaita. HM now owns these files.
+    enable = true;
+
+    # Same upstream project as Ghostty's Carbonfox theme (nightfox.nvim), then
+    # recolored below so the backgrounds match Ghostty exactly rather than just
+    # closely. Chosen over Graphite-Dark, whose #2C2C2C background is lighter
+    # than the terminal it sits next to.
     theme = {
-      name = "Adwaita-dark";
-      package = pkgs.gnome-themes-extra;
+      name = "Nightfox-Dark";
+      # Recolored in-package to Ghostty's Carbonfox background (#161616).
+      #
+      # This cannot be done from ~/.config/gtk-3.0/gtk.css: Nightfox-Dark
+      # hardcodes its palette as literals (55 hex + 256 rgba occurrences of the
+      # background alone) and never references @theme_bg_color, so redefining
+      # @define-color there resolves to nothing — the same way the old
+      # kde-gtk-config colors.css defined 5KB of colors that nothing read.
+      #
+      # Mapping is Nightfox's dark ramp onto Carbonfox's, so the theme keeps its
+      # internal light/dark relationships instead of going flat:
+      #   #0e131b bg0 -> #0e0e0e    #192330 bg1 -> #161616  (Ghostty's exact bg)
+      #   #212e3f bg2 -> #1c1c1c    #29394f bg3 -> #2a2a2a  (Carbon's selection)
+      #   #3c4756 bg4 -> #353535
+      # Foreground and the #719cd6 accent are deliberately left alone.
+      package = pkgs.nightfox-gtk-theme.overrideAttrs (old: {
+        postFixup = (old.postFixup or "") + ''
+          for d in $out/share/themes/Nightfox-Dark*; do
+            find "$d" -type f -exec sed -i \
+              -e 's/#0e131b/#0e0e0e/gI' \
+              -e 's/#192330/#161616/gI' \
+              -e 's/#212e3f/#1c1c1c/gI' \
+              -e 's/#29394f/#2a2a2a/gI' \
+              -e 's/#3c4756/#353535/gI' \
+              -e 's/rgba(20, *28, *38/rgba(16, 16, 16/gI' \
+              -e 's/rgba(25, *35, *48/rgba(22, 22, 22/gI' \
+              -e 's/rgba(33, *46, *63/rgba(28, 28, 28/gI' \
+              {} +
+          done
+        '';
+      });
     };
     iconTheme = {
       name = "Papirus-Dark";
       package = pkgs.papirus-icon-theme;
     };
-    gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
-    gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
+    font = {
+      name = "Noto Sans";
+      size = 10;
+    };
+
+    # Cursor carried over from the kde-gtk-config files this block replaces;
+    # without it the cursor reverts to the default theme. Render size is NOT
+    # set here — gtk-xft-dpi was a Plasma leftover, and scaling now lives in
+    # hyprland.conf as env = GDK_DPI_SCALE,1.67 so Hyprland owns it.
+    gtk3.extraConfig = {
+      gtk-application-prefer-dark-theme = 1;
+      gtk-cursor-theme-name = "breeze_cursors";
+      gtk-cursor-theme-size = 24;
+      gtk-decoration-layout = "icon:minimize,maximize,close";
+    };
+    gtk4.extraConfig = {
+      gtk-application-prefer-dark-theme = 1;
+      gtk-cursor-theme-name = "breeze_cursors";
+      gtk-cursor-theme-size = 24;
+      gtk-decoration-layout = "icon:minimize,maximize,close";
+    };
+
+    # Background-only transparency, mirroring Ghostty's background-opacity: the
+    # surface goes translucent (Hyprland's global blur sits behind it) while
+    # text and icons stay fully opaque. A Hyprland `opacity` window rule cannot
+    # express this — it fades the entire window, text included.
+    #
+    # Alpha is the one knob here: 0.85 is subtle, Ghostty itself runs 0.6.
+    #
+    # Caveat: this is user-wide GTK3 CSS. GTK has no per-application selector,
+    # so every GTK3 app gets the translucent background, not just Thunar.
+    # Delete this block to go back to fully opaque.
+    gtk3.extraCss = ''
+      window.background,
+      .background {
+        background-color: rgba(22, 22, 22, 0.85);
+      }
+
+      /* The theme paints these surfaces opaque over the window background;
+         clear them so the translucency is actually visible in the file list
+         and sidebar rather than only in the thin window margins. */
+      .view,
+      treeview.view,
+      scrolledwindow,
+      notebook,
+      notebook > stack,
+      paned,
+      .sidebar {
+        background-color: transparent;
+      }
+    '';
   };
 
   # Drives the xdg-desktop-portal "color-scheme" that Electron/Chromium/
