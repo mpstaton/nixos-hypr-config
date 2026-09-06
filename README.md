@@ -12,14 +12,26 @@ snapper was doing.
 flake.nix                          # inputs: nixpkgs 26.05, home-manager, disko
 hosts/hypr-nix/
   configuration.nix                 # system-level config (boot, users, hyprland, etc.)
+  crash-diagnostics.nix             # OPTIONAL — arms the hard-lockup detectors so the
+                                    #   next freeze leaves evidence; portable
+  gaming.nix                        # OPTIONAL — Steam/Proton + the 32-bit graphics and
+                                    #   audio stack; portable (see "Gaming" below)
   disko-config.nix                  # declarative disk layout (edit device= before install)
   hardware-configuration.nix         # PLACEHOLDER — auto-generated during install, see below
   hardware-sys76.nix                # MACHINE-SPECIFIC — this computer only, see below
 home/mps/home.nix                   # home-manager: fish, starship, git, dconf,
                                     #   hypridle/hyprlock (see "Idle, lock, suspend")
+changelog/                          # ship notes, YYYY-MM-DD_NN.md — what changed and why
 ```
 
 (Desktop dotfiles are **not** in this repo — see below.)
+
+**The optional-import pattern.** `crash-diagnostics.nix` and `gaming.nix` are each
+pulled in by exactly one line in `configuration.nix`'s `imports`, and nothing else
+depends on either. Delete the line and that whole concern leaves the system — no
+other edit, no orphaned settings. `hardware-sys76.nix` works the same way (see
+"Moving this setup to a different computer"), with the one difference that it is
+the only file here that is *not* portable.
 
 ## Desktop config lives in a separate repo: `nix-hypr-dotfiles`
 
@@ -116,6 +128,73 @@ thing a fresh clone silently won't restore. Verify with
   the **last** hand-placed asset — a fresh clone will not restore it, and
   `wpaperd` silently shows nothing if the path is missing.
 
+## Gaming (Steam, Proton, GPU offload)
+
+`hosts/hypr-nix/gaming.nix` — one import line in `configuration.nix`, nothing
+else in the config depends on it. Delete the line and the desktop is exactly
+what it was.
+
+On Garuda this was `pacman -S steam` and it worked, because Arch's multilib
+repo had already put a 32-bit graphics stack on the machine. NixOS asks for
+that explicitly, and the failure when you don't is the classic one: **the Steam
+client is a 32-bit program**, so without 32-bit Mesa/Vulkan it either refuses
+to launch or opens to a black window, with no error that says so. Same story
+for sound — a 32-bit game links against a 32-bit ALSA client library, and
+without it the game runs, renders, and is silent.
+
+What the file turns on:
+
+| Setting | Why |
+|---------|-----|
+| `programs.steam.enable` | The **module**, not `pkgs.steam`. Steam needs an FHS sandbox wrapper, controller udev rules, and firewall holes that only the module wires up |
+| `hardware.graphics.enable32Bit` | The 32-bit half of the graphics stack. Also pulls in the 32-bit NVIDIA userspace automatically |
+| `services.pipewire.alsa.support32Bit` | 32-bit audio. Set here rather than in `configuration.nix` so it leaves with this file |
+| `extraCompatPackages = [ proton-ge-bin ]` | GE-Proton in Steam's compatibility dropdown, versioned by nixpkgs instead of ProtonUp — same rollback story as the rest of the system |
+| `protontricks`, `extest` | The registry-poke escape hatch, and the shim that makes Steam Input's controller remapping work on Wayland (it synthesizes X11 XTEST events, which don't exist here) |
+| `gamemode`, `gamescope`, `mangohud` | Governor/priority boost on request, Valve's micro-compositor for resolution and upscaling, and the overlay that tells you which GPU is actually rendering |
+
+**The 32-bit audio has a real cost**, restated here because it's easy to forget
+why an unrelated update got slow: it drags i686 builds of the audio stack into
+every nixpkgs bump, and Hydra's i686 coverage is thin enough that some of those
+miss `cache.nixos.org` and compile on this machine.
+
+`gamescope.capSysNice` is deliberately **off**, against what most guides say.
+With native Steam the setcap'd binary refuses Steam's `LD_PRELOAD` environment
+and the game dies with *"failed to inherit capabilities: Operation not
+permitted"* ([NixOS/nixpkgs#351516](https://github.com/NixOS/nixpkgs/issues/351516)).
+Normal scheduling priority beats not starting.
+
+### The one thing you have to do per game (this machine)
+
+`hardware-sys76.nix` runs the RTX 4070 in PRIME **offload** mode — the Intel
+iGPU drives the panel and the NVIDIA card sleeps until something is explicitly
+launched onto it. That's the right default for battery life and it's why
+Hyprland is stable here, but it means:
+
+> **A game launched normally from Steam renders on the Intel iGPU.** It runs,
+> it runs badly, and nothing tells you why.
+
+Per game, in Steam: **Properties → General → Launch Options**:
+
+```
+nvidia-offload %command%
+```
+
+`nvidia-offload` already exists on this system, from
+`prime.offload.enableOffloadCmd` in `hardware-sys76.nix`. Composed with the
+helpers above, a fully loaded launch option is:
+
+```
+nvidia-offload gamemoderun mangohud %command%
+```
+
+Confirm it worked: mangohud's overlay names the rendering GPU — it should say
+NVIDIA, not Intel. Leave **Steam itself** on the iGPU; the client is a web
+browser and has no business waking a 4070.
+
+On a single-GPU machine none of this section applies and the rest of the file
+still works unchanged.
+
 ## Moving this setup to a different computer
 
 Anything specific to *this* machine ("sys76" — a System76 Serval WS) is
@@ -129,6 +208,12 @@ and keeps working, because `hardware.graphics.enable` plus mesa/nouveau gets you
 a desktop on any GPU vendor. Then write a `hardware-<name>.nix` for the new
 machine and import that instead. One file per machine; don't merge machine
 details back into `configuration.nix`.
+
+`crash-diagnostics.nix` and `gaming.nix` come along unchanged — both are
+portable, and both are one import line each if the new machine doesn't want
+them. The only machine-dependent thing in `gaming.nix` is *documented* rather
+than configured: the PRIME-offload launch-option note, which simply doesn't
+apply on a single-GPU box.
 
 > **Nix gotcha:** flakes only see files that git tracks. A newly created `.nix`
 > file fails to evaluate with *"Path ... is not tracked by Git"* until you
@@ -233,6 +318,14 @@ If `booted` and `current` differ, the switch landed but the running kernel is
 still the old one — reboot to pick it up. Committing `flake.lock` is what makes
 a generation reproducible; a stray `result` symlink in the repo root is a
 leftover GC root from `nix build` and is safe to delete.
+
+## Changelog
+
+`changelog/` holds ship notes as `YYYY-MM-DD_NN.md` — what changed, why it
+mattered, and what it cost. Commit messages in this repo already carry the
+reasoning; the changelog is the version of that a person can read start to
+finish without `git log`. Written when a coherent chunk of work lands, not
+per commit.
 
 ## Not yet ported (low priority, port if you miss them)
 
