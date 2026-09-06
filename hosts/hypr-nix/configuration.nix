@@ -18,6 +18,13 @@
     # configured to record one. Portable — nothing in it is sys76-specific
     # except the iTCO watchdog, which is present on any Intel platform.
     ./crash-diagnostics.nix
+
+    # Steam + the 32-bit graphics/audio stack it needs, plus gamemode and
+    # gamescope. Self-contained: delete this line and the desktop is
+    # untouched. Portable — the only machine-specific concern (PRIME offload
+    # means games need `nvidia-offload %command%` in their launch options) is
+    # documented in prose there, not configured.
+    ./gaming.nix
   ];
 
   ####################################################################
@@ -241,11 +248,13 @@
   services.pipewire = {
     enable = true;
     alsa.enable = true;
-    # alsa.support32Bit deliberately off. It only matters for 32-bit apps that
-    # play audio (Steam, Wine, Proton), none of which are installed here, and
-    # it drags i686 builds of the audio stack into every update. Hydra's i686
-    # coverage is thin, so those miss the binary cache and compile locally —
-    # a documented cause of oversized rebuilds. Re-enable it with Steam/Wine.
+    # alsa.support32Bit is NOT set here — it is turned on by gaming.nix, which
+    # is where the thing that needs it (Steam/Proton, whose client and many
+    # games are 32-bit) is declared. The cost noted when this was first left
+    # off still stands and is restated there: it drags i686 builds of the
+    # audio stack into every update, and Hydra's thin i686 coverage means some
+    # of those miss the binary cache and compile locally. Removing ./gaming.nix
+    # from the imports above reverts this to off with no edit needed here.
     pulse.enable = true;
     wireplumber.enable = true;
   };
@@ -301,6 +310,20 @@
     vscode          # VS Code (unfree; allowUnfree is set below)
     pnpm            # fast Node package manager
     uv              # fast Python package/proj manager (Astral)
+    python3         # interpreter + stdlib. `uv` above manages project envs and
+                    # can even fetch its own interpreters, but neither of those
+                    # puts a plain `python3` on PATH — which is what an ad-hoc
+                    # script (or an agent writing one) assumes exists. Stdlib
+                    # only by design; anything needing deps should go through
+                    # `uv run`, which keeps this out of the system closure.
+    bc              # arbitrary-precision calculator. Same reason as python3
+                    # above: shell snippets reach for it by reflex for float
+                    # arithmetic. gawk covers the same ground and IS guaranteed
+                    # (NixOS requiredPackages), but `bc` is what gets typed.
+    file            # type identification. Its absence is worse than an error:
+                    # `find ... -exec file {} \; | grep -v text` silently yields
+                    # nothing when file is missing, which reads as "no binary
+                    # files here" rather than as a failure.
     superfile       # `spf` — modern terminal file manager
     nushell         # `nu` — structured-data shell (available to run; not the login shell)
     brave           # Brave browser
