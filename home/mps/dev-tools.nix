@@ -32,6 +32,21 @@
     ripgrep
     ugrep
 
+    # ---- JS runtimes the sites' own scripts invoke ---------------------
+    #
+    # These were briefly put in the lossless-monorepo devshell instead, which
+    # was wrong: `pnpm build` in mpstaton-site runs `bun scripts/fetch-*.ts`,
+    # so a plain shell in that directory needs bun on PATH. Requiring a
+    # devshell (or a direnv hook that is not yet active) to run the project's
+    # own build script is friction with no upside — the build command should
+    # just work.
+    #
+    # bun: mpstaton-site's fetch-context-v / fetch-essays / fetch-playlists.
+    # deno: `jsr publish` is deno underneath, and the jsr CLI's own downloaded
+    #       binary cannot execute on NixOS. No site RUNS on deno.
+    bun
+    deno
+
     # ---- Process and port inspection -----------------------------------
     #
     # These are here because their absence fails SILENTLY, which is the worst
