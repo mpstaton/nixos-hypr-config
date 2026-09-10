@@ -1,6 +1,12 @@
 { config, pkgs, lib, inputs, ... }:
 
 {
+  imports = [
+    # CLI tooling for the lossless-monorepo work — see the file for why these
+    # four and not the dozen the monorepo flake used to list.
+    ./dev-tools.nix
+  ];
+
   home.username = "mps";
   home.homeDirectory = "/home/mps";
   home.stateVersion = "26.05";
@@ -143,7 +149,7 @@
   home.packages = with pkgs; [
     neovim
     helix
-    ripgrep
+    # ripgrep moved to dev-tools.nix, next to ugrep
     fd
     fzf
     bat

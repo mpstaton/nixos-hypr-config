@@ -61,7 +61,16 @@
   users.users.mps = {
     isNormalUser = true;
     description = "mps";
-    extraGroups = [ "networkmanager" "wheel" "video" "input" "audio" "docker" ];
+    # "gamemode" is the one that isn't obvious. GameMode's polkit rule grants
+    # the cpugovctl/gpuclockctl helpers to `subject.isInGroup("gamemode")` and
+    # nobody else; the NixOS module creates that group but deliberately leaves
+    # it empty, so membership is opt-in and this line is the opt-in. Without
+    # it gamemoded registers the game, sets I/O priority, then asks polkit to
+    # switch the CPU governor to performance and is told "Not authorized" —
+    # which it logs and nothing else surfaces. The governor stays on powersave
+    # for the whole session. See gaming.nix; that file supplies the library,
+    # this line supplies the permission, and both are needed.
+    extraGroups = [ "networkmanager" "wheel" "video" "input" "audio" "docker" "gamemode" ];
     # fish, not bash. Everything in home.nix's shell config — the starship
     # prompt, and the ls/cat/upd/gc/rollback aliases — is written for fish
     # only, so a bash login silently got none of it. The starship prompt also
