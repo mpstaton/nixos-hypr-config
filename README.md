@@ -21,6 +21,8 @@ hosts/hypr-nix/
   hardware-sys76.nix                # MACHINE-SPECIFIC — this computer only, see below
 home/mps/home.nix                   # home-manager: fish, starship, git, dconf,
                                     #   hypridle/hyprlock (see "Idle, lock, suspend")
+home/mps/dev-tools.nix              # OPTIONAL — CLI tooling (search, process/port
+                                    #   inspection, direnv); portable, see "CLI tooling"
 changelog/                          # ship notes, YYYY-MM-DD_NN.md — what changed and why
 ```
 
@@ -194,6 +196,60 @@ browser and has no business waking a 4070.
 
 On a single-GPU machine none of this section applies and the rest of the file
 still works unchanged.
+
+## CLI tooling (`home/mps/dev-tools.nix`)
+
+Follows the same optional-import pattern as `gaming.nix`: one line in
+`home.nix`'s `imports`, nothing else depends on it, delete the line and the
+whole concern leaves the system.
+
+**Why it exists.** `home.nix` aliases `grep` to `ugrep --color=auto` — and
+ugrep was not installed, so every interactive `grep` was a command-not-found.
+That is the cheap version of a pattern worth naming: **a missing small CLI tool
+rarely announces itself.** It surfaces as a script behaving oddly, or as nothing
+at all while something downstream quietly does the wrong thing.
+
+The expensive version: neither `lsof` nor `fuser` was installed. Nearly every
+script that asks "which process holds this port" reaches for one of them. With
+neither present the lookup returns nothing, the script carries on, and a dev
+server that silently auto-increments past a busy port binds somewhere else —
+so a harness serving several site builds side by side served the wrong ones
+under the right labels, twice, before anyone suspected the missing binary.
+
+**What is in it.**
+
+| Group | Packages |
+|---|---|
+| Search | `ripgrep`, `ugrep` |
+| Process / port | `lsof`, `psmisc` (fuser, killall, pstree) |
+| Reflex tools | `sqlite`, `zip`, `dnsutils` (dig), `xxd`, `file`, `entr`, `just` |
+| Git and shell | `delta` (+ git integration), `aha`, `duf`, `yq` |
+| Shell environment | `direnv`, `nix-direnv` |
+
+`ripgrep` lives here rather than in `home.nix` so the two search tools sit
+together. Use rg by default — it respects `.gitignore`, which matters in any
+tree carrying `node_modules`. Reach for ugrep when the search is a question
+rather than a pattern: boolean queries (`-%`), fuzzy matching (`-Z`), searching
+inside archives and PDFs, and its TUI (`ug --query`).
+
+**What is deliberately absent.** `sd`, `dust`, `procs`, `difft`, `tokei`,
+`hyperfine`, `jless`, `gron`, `mlr`, `httpie` and similar all duplicate
+something already installed. The restraint is the point — a tools list earns
+its place by being reached for, not by being comprehensive. `gcc` and `make`
+are also absent, which does break `node-gyp` native builds; that is left alone
+because a C toolchain in a user profile is a bigger decision than a CLI
+utility, and the idiomatic NixOS answer is a per-project devshell.
+
+The whole set is roughly 41 MB, all prebuilt from `cache.nixos.org` — the
+switch that adds it looks like it does nothing, because there is nothing to
+compile and nothing to fetch. New tools appear on `PATH` in a *new* shell;
+the one you ran `upd` from keeps its old environment.
+
+**direnv is here rather than in a devshell** because it must already be on
+`PATH` when you `cd` into a directory, or it can never auto-load anything —
+shipping it inside the shell it is meant to launch is circular. With it
+installed, a project's `.envrc` can `use flake .#<shell>` and hand you that
+project's toolchain on entry with nothing typed.
 
 ## Moving this setup to a different computer
 
