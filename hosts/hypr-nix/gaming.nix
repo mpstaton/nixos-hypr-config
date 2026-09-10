@@ -107,6 +107,33 @@
   # launch options with `gamemoderun %command%`.
   programs.gamemode.enable = true;
 
+  # ...but enabling the daemon is only half of it. A game "asks" for GameMode
+  # by dlopen()ing libgamemode.so, and Steam runs everything inside an FHS
+  # sandbox whose /usr/lib contains only what this module was told to put
+  # there. The system-wide gamemode package is NOT visible in there, so every
+  # request fails and the daemon above sits idle. Observed on this machine
+  # before the fix, in ~/.local/share/Steam/logs/console-linux.txt:
+  #
+  #   gamemodeauto: dlopen failed - libgamemode.so: cannot open shared object
+  #   file: No such file or directory
+  #
+  # Nothing surfaces this in the UI — GameMode simply never engages, and the
+  # only symptom is the framerate you never got.
+  #
+  # `extraLibraries` is the module's hook for adding libraries to that
+  # sandbox. It is invoked twice, once per architecture, with the matching
+  # nixpkgs set — so this single line lands the 64-bit lib in /usr/lib64 for
+  # games and the 32-bit lib in /usr/lib32 for the Steam client itself (note
+  # /usr/lib is a symlink to /usr/lib64 in there, which makes the 64-bit copy
+  # look absent from outside the sandbox — it isn't). The `.lib` output is
+  # just the shared objects, not the daemon and CLI.
+  #
+  # This makes the AUTOMATIC path work. The explicit `gamemoderun %command%`
+  # documented at the bottom of this file never needed it and still works.
+  programs.steam.package = pkgs.steam.override {
+    extraLibraries = p: [ p.gamemode.lib ];
+  };
+
   # Gamescope — Valve's micro-compositor (the thing the Steam Deck runs).
   # Useful here for three specific problems: a game that insists on changing
   # your desktop resolution, a game that mis-handles this 4K panel's scaling,
@@ -128,6 +155,57 @@
     # matters far less than gamescope not starting at all.
     capSysNice = false;
   };
+
+  ####################################################################
+  # Keep the Steam CLIENT off the dGPU  (fixes the unnavigable-UI lag)
+  ####################################################################
+  # Upstream's steam.desktop ships these two keys:
+  #
+  #     PrefersNonDefaultGPU=true
+  #     X-KDE-RunOnDiscreteGpu=true
+  #
+  # They are a request to the launcher: "start me on the discrete card."
+  # Launchers that honour it (nwg-drawer, KDE's Kickoff, GNOME Shell) grant
+  # it the only way the freedesktop spec knows how — by exporting
+  # DRI_PRIME=1 into the process. On a normal Mesa-only PRIME laptop that is
+  # correct and harmless. On THIS machine it is neither, because the dGPU is
+  # driven by the proprietary NVIDIA driver, which Mesa cannot render on
+  # directly. Measured on this box:
+  #
+  #   (no vars)      -> Mesa Intel(R) Graphics (RPL-S)          <- iGPU, native
+  #   DRI_PRIME=1    -> zink Vulkan 1.4(NVIDIA ... PROPRIETARY)  <- GL-on-Vulkan
+  #   nvidia-offload -> NVIDIA GeForce RTX 4070 Laptop GPU       <- dGPU, native
+  #
+  # DRI_PRIME=1 does not get you the NVIDIA GL driver. It gets you ZINK —
+  # Mesa's OpenGL-on-Vulkan translation layer — stacked on the proprietary
+  # Vulkan driver. Steam's UI is Chromium (steamwebhelper/CEF), and
+  # CEF-on-Zink-on-proprietary-NVIDIA-on-XWayland segfaults its GPU process
+  # repeatedly (exit_code=139 in ~/.local/share/Steam/logs/cef_log.txt).
+  # After enough crashes Chromium gives up and disables GPU compositing, so
+  # the entire client repaints on the CPU: scrolling stutters and clicks land
+  # seconds late. That is the "Steam is unnavigable" bug, and nothing about
+  # it announces itself — the UI just gets slow.
+  #
+  # So: flip both keys off. This is the enforcement of the advice the dGPU
+  # section below already gives in prose — "leave Steam ITSELF on the iGPU,
+  # the client is a web browser and has no business waking a 4070." Games
+  # still reach the 4070, via `nvidia-offload %command%` per game; that path
+  # is native NVIDIA GL and is unaffected by this.
+  #
+  # Patched rather than replaced so the upstream file keeps its nine desktop
+  # actions and its ~25 translations. `--replace-fail` so a rename upstream
+  # breaks the build loudly instead of silently restoring the lag.
+  nixpkgs.overlays = [
+    (final: prev: {
+      steam-unwrapped = prev.steam-unwrapped.overrideAttrs (old: {
+        postInstall = (old.postInstall or "") + ''
+          substituteInPlace $out/share/applications/steam.desktop \
+            --replace-fail 'PrefersNonDefaultGPU=true'   'PrefersNonDefaultGPU=false' \
+            --replace-fail 'X-KDE-RunOnDiscreteGpu=true' 'X-KDE-RunOnDiscreteGpu=false'
+        '';
+      });
+    })
+  ];
 
   ####################################################################
   # Gaming-adjacent packages
