@@ -377,7 +377,8 @@
                     # `find ... -exec file {} \; | grep -v text` silently yields
                     # nothing when file is missing, which reads as "no binary
                     # files here" rather than as a failure.
-    unstable.superfile # `spf` — modern terminal file manager. 1.3.3 -> 1.6.0
+    unstable.superfile # `superfile` — modern terminal file manager. The nixpkgs
+                       # build installs no `spf` alias. 1.3.3 -> 1.6.0
     unstable.nushell # `nu` — structured-data shell (available to run; not the
                      # login shell). 0.112.2 -> 0.115.1
     brave           # Brave browser
