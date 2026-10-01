@@ -103,6 +103,9 @@
       "..." = "cd ../..";
       "...." = "cd ../../..";
       grep = "ugrep --color=auto";
+      # superfile's docs call it `spf`, but the nixpkgs build only installs
+      # `superfile`.
+      spf = "superfile";
       # NixOS equivalents of the old Garuda maintenance aliases
       upd = "sudo nixos-rebuild switch --flake ~/code/nixos-hypr-config#hypr-nix";
       updflake = "nix flake update --flake ~/code/nixos-hypr-config";
