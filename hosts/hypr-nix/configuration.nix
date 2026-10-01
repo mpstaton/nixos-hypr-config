@@ -298,6 +298,42 @@
   ####################################################################
   nixpkgs.config.allowUnfree = true; # needed for warp-terminal, vscode, etc.
 
+  # `pkgs.unstable.<name>` — the rolling channel, available per-package.
+  #
+  # Why an overlay instead of moving the whole system to nixos-unstable: this
+  # laptop runs the RTX 4070 in PRIME offload (hardware-sys76.nix) and carries
+  # the 32-bit Steam stack (gaming.nix). Kernel and NVIDIA churn is the usual
+  # way that arrangement breaks, and it breaks at BOOT, where the cost is a
+  # rollback from the systemd-boot menu rather than a re-run. So stable keeps
+  # the things that boot the machine, and the overlay takes the things that
+  # merely run on it.
+  #
+  # Each package pulled from here brings its own slice of unstable's closure
+  # (unstable's glibc differs from 26.05's), so this list is kept to tools
+  # whose version delta is real and measured — not everything that COULD move.
+  # Packages at identical versions in both channels (gh, helix, delta,
+  # lazydocker, nodejs_24, zellij as of 2026-10-01) are deliberately left on
+  # stable: overlaying them would add a parallel closure and buy nothing.
+  #
+  # Because home-manager.useGlobalPkgs = true (flake.nix), home-manager shares
+  # this pkgs — so `pkgs.unstable.*` resolves in home.nix and dev-tools.nix too
+  # with no further wiring. One overlay serves all three modules.
+  nixpkgs.overlays = [
+    (final: prev: {
+      unstable = import inputs.nixpkgs-unstable {
+        # `prev.stdenv`, not `final.` and not `config.nixpkgs.*`. Reading the
+        # platform off `final` (or back out of the module system) from inside
+        # an overlay is infinite recursion — `prev` is the already-evaluated
+        # stage and is the safe place to ask.
+        system = prev.stdenv.hostPlatform.system;
+        # A separate nixpkgs import does NOT inherit the allowUnfree above;
+        # its config is its own. Restated so an unfree package cherry-picked
+        # from unstable later doesn't fail for a non-obvious reason.
+        config.allowUnfree = true;
+      };
+    })
+  ];
+
   environment.systemPackages = with pkgs; [
     git
     gh
@@ -305,7 +341,9 @@
     wget
     killall
     unzip
-    claude-code
+    unstable.claude-code   # 2.1.223 -> 2.1.285. The clearest case for the
+                           # overlay: 62 patch releases in the 25 days stable
+                           # sat still, and it ships several times a week.
     stow            # GNU Stow — manages the ~/nix-hypr-dotfiles symlink farm
 
     # Container tooling / GUIs (Docker engine itself is the service above)
@@ -313,12 +351,18 @@
     podman-desktop  # desktop GUI (manages the docker socket too)
 
     # Dev tools (were `nix profile install`-ed; now declarative)
-    jujutsu         # `jj` — git-compatible VCS
+    unstable.jujutsu # `jj` — git-compatible VCS. 0.41.0 -> 0.45.1; pre-1.0
+                    # and moving fast enough that stable lags meaningfully.
     helix           # `hx` — modal terminal editor
     nvd             # nix closure diff (used by the update-preview ritual)
     vscode          # VS Code (unfree; allowUnfree is set below)
-    pnpm            # fast Node package manager
-    uv              # fast Python package/proj manager (Astral)
+    # MAJOR, taken deliberately: pnpm 11.27.0 -> 12.3.4. Nothing breaks at
+    # switch time — this only puts a binary on PATH. The risk is deferred to
+    # the next `pnpm install` in a repo, where a major can rewrite the
+    # lockfile. That lands in a git-tracked tree at a time of your choosing.
+    unstable.pnpm   # fast Node package manager
+    unstable.uv     # fast Python package/proj manager (Astral). 0.11.21 ->
+                    # 0.12.17.
     python3         # interpreter + stdlib. `uv` above manages project envs and
                     # can even fetch its own interpreters, but neither of those
                     # puts a plain `python3` on PATH — which is what an ad-hoc
@@ -333,8 +377,9 @@
                     # `find ... -exec file {} \; | grep -v text` silently yields
                     # nothing when file is missing, which reads as "no binary
                     # files here" rather than as a failure.
-    superfile       # `spf` — modern terminal file manager
-    nushell         # `nu` — structured-data shell (available to run; not the login shell)
+    unstable.superfile # `spf` — modern terminal file manager. 1.3.3 -> 1.6.0
+    unstable.nushell # `nu` — structured-data shell (available to run; not the
+                     # login shell). 0.112.2 -> 0.115.1
     brave           # Brave browser
     kdePackages.kdenlive   # KDE video editor
     switcheroo      # image converter / resizer GUI
@@ -351,18 +396,34 @@
     ripgrep         # `rg`
     tree
     zoxide          # smarter `cd` (needs shell init to fully work)
-    railway         # Railway.app CLI
-    flyctl          # Fly.io CLI  (you wrote "flytl")
+    # MAJOR, taken deliberately: railway 4.36.1 -> 5.30.4. A CLI major can
+    # move command syntax and the auth flow; it talks to a remote API whose
+    # server half has already moved on, which is the argument for going.
+    unstable.railway # Railway.app CLI
+    unstable.flyctl # Fly.io CLI  (you wrote "flytl"). 0.4.52 -> 0.4.108 —
+                    # 56 releases. A deploy CLI skewed this far behind its
+                    # own server API is asking for a confusing failure.
     glow            # markdown pager
     git-lfs
     pandoc
-    surrealdb
+    # MAJOR, taken deliberately: surrealdb 2.6.1 -> 3.0.0.
+    #
+    # Checked before agreeing to it (2026-10-01): there is NO local SurrealDB
+    # data on this machine — no ~/.surrealdb, no *.surql, no surreal systemd
+    # unit, no surreal container — so the storage-format migration that makes
+    # a database major scary has nothing here to migrate.
+    #
+    # And `surrealist` below is ALREADY 3.6.1 on both channels, so the stable
+    # 2.6.1 server was the mismatched half. This bump aligns them rather than
+    # splitting them.
+    unstable.surrealdb
     surrealist      # SurrealDB GUI / query explorer
     tldr
     tmux
-    turso-cli       # Turso CLI (`turso`)
+    unstable.turso-cli # Turso CLI (`turso`). 1.0.26 -> 1.0.32
     zellij          # terminal multiplexer
-    atuin           # shell history (needs shell init to fully work)
+    unstable.atuin  # shell history (needs shell init to fully work).
+                    # 18.15.2 -> 18.21.0
     # note: fish + starship already configured in home/mps/home.nix (not duplicated here)
     # NB: `pkgs.stdenv.hostPlatform.system`, not `pkgs.system` — the latter is
     # deprecated and makes every evaluation print

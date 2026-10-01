@@ -156,8 +156,10 @@
     eza
     zoxide
     tealdeer
-    yazi
-    lazygit
+    # From the unstable overlay (declared in configuration.nix — visible here
+    # because home-manager.useGlobalPkgs shares the system's pkgs).
+    unstable.yazi    # 26.5.6 -> 26.9.1
+    unstable.lazygit # 0.61.1 -> 0.65.1
 
     # Node 24 for deepseek-harness (dsh), which is built from source at
     # ~/code/deepseek-harness rather than packaged — it ships no flake, and

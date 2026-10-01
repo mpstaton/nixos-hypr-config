@@ -30,7 +30,7 @@
     # more to remember; reach for it when a search is a question rather than a
     # pattern.
     ripgrep
-    ugrep
+    unstable.ugrep # 7.5.0 -> 7.8.5
 
     # ---- JS runtimes the sites' own scripts invoke ---------------------
     #
@@ -44,8 +44,11 @@
     # bun: mpstaton-site's fetch-context-v / fetch-essays / fetch-playlists.
     # deno: `jsr publish` is deno underneath, and the jsr CLI's own downloaded
     #       binary cannot execute on NixOS. No site RUNS on deno.
-    bun
-    deno
+    # Both from unstable: these two are load-bearing for the sites' own build
+    # scripts (see above), which is exactly where a stale runtime shows up as
+    # a confusing build error rather than as a version complaint.
+    unstable.bun   # 1.3.13 -> 1.4.2
+    unstable.deno  # 2.8.3 -> 2.9.7
 
     # ---- Process and port inspection -----------------------------------
     #
@@ -72,7 +75,10 @@
     unixtools.xxd # hexdump for when a file is "corrupted" or has a BOM
     file     # what IS this thing
     entr     # rerun a command when files change
-    just     # task runner; a Justfile beats a pile of shell scripts
+    # From the unstable overlay (configuration.nix). useGlobalPkgs means
+    # home-manager shares the system pkgs, so `unstable.*` resolves here too.
+    unstable.just # task runner; a Justfile beats a pile of shell scripts.
+                  # 1.51.0 -> 1.58.0
   ];
 
   # direnv HAS to be installed permanently rather than shipped inside a

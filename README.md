@@ -9,7 +9,8 @@ snapper was doing.
 ## Repo layout
 
 ```
-flake.nix                          # inputs: nixpkgs 26.05, home-manager, disko
+flake.nix                          # inputs: nixpkgs 26.05 (base) + nixpkgs-unstable
+                                   #   (per-package overlay), home-manager, disko
 hosts/hypr-nix/
   configuration.nix                 # system-level config (boot, users, hyprland, etc.)
   crash-diagnostics.nix             # OPTIONAL — arms the hard-lockup detectors so the
@@ -374,6 +375,47 @@ If `booted` and `current` differ, the switch landed but the running kernel is
 still the old one — reboot to pick it up. Committing `flake.lock` is what makes
 a generation reproducible; a stray `result` symlink in the repo root is a
 leftover GC root from `nix build` and is safe to delete.
+
+### "Latest" has two different meanings here
+
+Checked 2026-10-01: **26.05 is the newest NixOS release.** nixpkgs has no
+`nixos-26.11` branch yet — releases are cut on a May/November cadence, and the
+branch only appears a few weeks ahead of ship. So `nix flake update nixpkgs`
+is picking up *backports to 26.05*, not a version upgrade. Being "a month
+behind" means a month of security and point releases, not a missed release.
+
+Going newer than that means leaving release channels for the rolling one, and
+this config does it **per package, not wholesale**:
+
+```bash
+nix eval --raw .#nixosConfigurations.hypr-nix.config.system.build.toplevel.drvPath
+# the version embedded in the drv name is the nixpkgs date you are on
+```
+
+`flake.nix` carries a second input, `nixpkgs-unstable`, exposed by an overlay in
+`configuration.nix` as `pkgs.unstable.<name>`. Stable keeps everything that
+boots the machine — kernel, NVIDIA driver (PRIME offload, `hardware-sys76.nix`),
+the 32-bit Steam stack (`gaming.nix`) — because those fail at boot, where the
+cost is a rollback from the systemd-boot menu. The overlay takes the things that
+merely *run* on it.
+
+To move one package to the rolling channel, prefix it: `jujutsu` becomes
+`unstable.jujutsu`, in whichever of the three module files already lists it.
+`home-manager.useGlobalPkgs = true` means home-manager shares the system `pkgs`,
+so `unstable.*` resolves in `home/mps/home.nix` and `home/mps/dev-tools.nix`
+with no extra wiring.
+
+Two rules keep that list from growing uselessly:
+
+1. **Measure before overlaying.** Plenty of packages are at the *same* version
+   in both channels — as of 2026-10-01: `gh`, `helix`, `delta`, `lazydocker`,
+   `nodejs_24`, `zellij`. Overlaying those adds a closure and buys nothing.
+   Compare with `nix eval` against both inputs before adding one.
+2. **Each overlaid package costs a closure slice.** unstable's glibc is not
+   26.05's, so an overlaid package pulls its own dependency tree. Nix handles
+   this correctly — it is disk and download, not breakage — but it is the reason
+   to cherry-pick fast-moving CLI tools and *not* blanket-redirect browsers,
+   Electron apps, or anything GUI-sized.
 
 ## Changelog
 

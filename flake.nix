@@ -3,7 +3,24 @@
 
   inputs = {
     # Pin to the current NixOS stable release (26.05, per nixos.org/download).
+    # 26.05 IS the newest release — checked 2026-10-01, nixpkgs has no
+    # nixos-26.11 branch yet (releases are cut on a May/November cadence, so
+    # 26.11 lands ~end of November). Bumping this input is therefore a
+    # backport bump, not a version upgrade.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+
+    # The rolling channel, deliberately NOT this system's base. It is reachable
+    # only as `pkgs.unstable.*`, through the overlay in configuration.nix, so
+    # individual fast-moving user-space tools can run ahead of stable while the
+    # kernel, the NVIDIA driver, and the 32-bit gaming stack stay on tested
+    # 26.05 — the three things whose breakage costs a boot rather than a retry.
+    #
+    # Cost of each package taken from here: unstable's glibc is not 26.05's, so
+    # an overlaid package drags its own slice of unstable's closure. Nix handles
+    # that correctly; it is disk and download, not breakage. Which is why the
+    # cherry-picks are a short list of things whose version actually matters,
+    # not a blanket redirect.
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
       url = "github:nix-community/home-manager/release-26.05";
