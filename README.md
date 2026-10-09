@@ -353,22 +353,43 @@ reboot
 
 ## Keeping it up to date
 
+Update in **two steps**, not with a bare `nix flake update`. Bumping every
+input at once crashed this machine right after the build on 2026-10-09. The
+cause was never found, and with everything bumped together there was no way to
+narrow it down. Splitting the update separates "something I run broke" from
+"something that boots the machine broke":
+
 ```bash
 cd ~/code/nixos-hypr-config
-nix flake update                    # bump all inputs in flake.lock
-# or bump just one:  nix flake update nixpkgs
 
-# validate before committing to a switch (no sudo, builds into the store)
+# Step 1: inputs that only change what runs on the machine
+nix flake update nixpkgs-unstable zen-browser hunk home-manager
 nix build --no-link .#nixosConfigurations.hypr-nix.config.system.build.toplevel
-
 sudo nixos-rebuild switch --flake .#hypr-nix
+# use the machine for a bit, then commit flake.lock
+
+# Step 2: root nixpkgs, which carries the kernel, NVIDIA driver, systemd and glibc
+nix flake update nixpkgs
+nix build --no-link .#nixosConfigurations.hypr-nix.config.system.build.toplevel
+sudo nixos-rebuild boot --flake .#hypr-nix
+# reboot, run the checks below, then commit flake.lock
 ```
+
+`switch` can't test step 2. The running system keeps its old kernel and old
+systemd until a reboot, so a reboot is the only real check. If the new
+generation doesn't come up, choose the previous one in the systemd-boot menu.
+`nvd diff /nix/var/nix/profiles/system-{N-1,N}-link` shows what a step actually
+changed. Look for `linux`, `nvidia-open` and `systemd` in step 2.
+
+The full story is in `changelog/2026-10-09_01.md`.
 
 Check what you're actually running vs. what's built:
 
 ```bash
 nixos-rebuild list-generations | head        # is the newest one Current?
 readlink -f /run/booted-system               # equal to /run/current-system?
+systemctl --failed; systemctl --user --failed   # should both be empty
+coredumpctl list --since today               # should be empty
 ```
 
 If `booted` and `current` differ, the switch landed but the running kernel is
